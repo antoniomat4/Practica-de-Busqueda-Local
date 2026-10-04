@@ -1,9 +1,8 @@
 package ClasesPractica1;
 
-import IA.Energia.Centrales;
-import IA.Energia.Central;
-import IA.Energia.Clientes;
-import IA.Energia.Cliente;
+import IA.Energia.*;
+
+import static java.lang.Math.sqrt;
 
 
 /**
@@ -20,51 +19,123 @@ public class Estado {
         Estado.powerPlants = powerPlants;
         Estado.clients = clients;
         this.assignment = new int[clients.size()];
+    }
 
-        //initialize initial state by only assigning clients with guaranteed contracts
-        // to the next available power plant
+    /**
+     * Generates an initial state by only assigning clients with guaranteed contracts
+     * to the next available power plant
+     * @return a valid assignment of clients to power plants
+     */
+    public int[] generateInitialAssignment1(){
         int powerPlantID = 0;
-        for (int clientID = 0; clientID < this.assignment.length; clientID++) {
+        for (int clientID = 0; clientID < clients.size(); clientID++) {
             Cliente client = clients.get(clientID);
             if(client.getContrato() == Cliente.GARANTIZADO){
+                //assign the next available power plant to clients with guaranteed contracts
                 while(!changeAssignment(clientID, powerPlantID)){
                     powerPlantID++;
-                    if(powerPlantID > Estado.powerPlants.size()){
+                    if(powerPlantID >= Estado.powerPlants.size()){
                         break;
                     }
-                }
+                }//don't assign a power plant to clients with non-guaranteed contracts at all
             }else if(client.getContrato() == Cliente.NOGARANTIZADO){
                 this.changeAssignment(clientID, -1);
             }
         }
+        return this.assignment;
     }
 
     /**
-     * Changes the power plant assignment of a client. No assignment to any power plant
+     * Generates an initial state by assigning clients with guaranteed contracts to the next
+     * available power plant and topping those off with clients with non-guaranteed contracts.
+     * @return a valid assignment of clients to power plants
+     */
+    public int[] generateInitialAssignment2(){
+        int powerPlantIdG = 0;
+        int powerPlantIdN = 0;
+        for (int clientID = 0; clientID < clients.size(); clientID++) {
+            Cliente client = clients.get(clientID);
+            if(client.getContrato() == Cliente.GARANTIZADO){
+                //assign the next available power plant to clients with guaranteed contracts
+                while(!changeAssignment(clientID, powerPlantIdG)){
+                    powerPlantIdG++;
+                    if(powerPlantIdG >= Estado.powerPlants.size()){
+                        break;
+                    }
+                }
+            }else if(client.getContrato() == Cliente.NOGARANTIZADO){
+                //top off already visited power plants with clients with non-guaranteed contracts
+                while(!changeAssignment(clientID, powerPlantIdN)){
+                    powerPlantIdN++;
+                    if(powerPlantIdN >= powerPlantIdG){
+                        //in order to not take away space from clients with guaranteed contracts,
+                        //don't assign if a new power plant would be needed
+                        changeAssignment(clientID, -1);
+                        break;
+                    }
+                }
+            }
+        }
+        return this.assignment;
+    }
+
+    /**
+     * Changes the power plant assignment of a single client. No assignment to any power plant
      * is represented by -1.
      * @param clientID Index of the client whose assignment is to be changed.
      * @param powerPlantID Index of the power plant which is to be assigned
      */
     public boolean changeAssignment(int clientID, int powerPlantID){
-        if(powerPlantID == -1){
+        //only allow no assignation if the clients contract is not guaranteed
+        if(powerPlantID == -1 && clients.get(clientID).getContrato() == Cliente.NOGARANTIZADO){
             assignment[clientID] = -1;
             return true;
         }
         Central powerPlant = powerPlants.get(powerPlantID);
-        Cliente client = clients.get(clientID);
-        //TODO zusätzlich nötige Produktion wegen Distanz prüfen
-        if(this.getCurrentProduction(powerPlantID) + client.getConsumo()
-                <= powerPlant.getProduccion()){
-        assignment[clientID] = powerPlantID;
-        return true;
+        double currentProduction = this.getCurrentProduction(powerPlantID);
+        double necessaryMW = getNecessaryMW(clientID, powerPlant);
+        //only change the assignment if the power plant produces enough
+        if(currentProduction + necessaryMW <= powerPlant.getProduccion()){
+            assignment[clientID] = powerPlantID;
+            return true;
         }
         return false;
     }
 
     /**
+     * Getter for the states assignment of power plants to clients
+     * @return the states assignment
+     */
+    public int[] getAssignment(){
+        return this.assignment;
+    }
+
+    /**
+     * Setter for the assignment variable
+     * @param assignment Assignment which is to be set
+     */
+    public void setAssignment(int[] assignment) {
+        this.assignment = assignment;
+    }
+
+    /**
+     * Calculates how much a power plant has to produce in order to supply a client depending on their distance.
+     * @param clientID ID of the client which is to be supplied
+     * @param powerPlant power plant which is to supply
+     * @return necessary production in order to supply the client
+     */
+    private static double getNecessaryMW(int clientID, Central powerPlant) {
+        Cliente client = clients.get(clientID);
+        double distance = sqrt((client.getCoordX() - powerPlant.getCoordX()) * (client.getCoordX() - powerPlant.getCoordX())
+                + (client.getCoordY() - powerPlant.getCoordY()) * (client.getCoordY() - powerPlant.getCoordY()));
+        double lossFactor = 1 + VEnergia.getPerdida(distance);
+        return client.getConsumo() * lossFactor;
+    }
+
+    /**
      * Calculates the amount of a power plant's production which is already being used by clients.
      * @param powerPlant power plant for which the used production is to be calculated
-     * @return amount of production which is already being used
+     * @return amount of the production which is already being used
      */
     private double getCurrentProduction(int powerPlant){
         double production = 0;
