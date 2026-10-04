@@ -2,6 +2,8 @@ package ClasesPractica1;
 
 import IA.Energia.*;
 
+import java.util.Arrays;
+
 import static java.lang.Math.sqrt;
 
 
@@ -9,15 +11,15 @@ import static java.lang.Math.sqrt;
  * Class for the state. A state is represented by a list the length of the number of customers.
  * At every customer's index, the index of the power plant which is responsible for them is saved.
  */
-public class Estado {
+public class State {
     private int[] assignment;
     private static Centrales powerPlants;
     private static Clientes clients;
 
-
-    public Estado(Clientes clients, Centrales powerPlants) {
-        Estado.powerPlants = powerPlants;
-        Estado.clients = clients;
+    //TODO besseres wort für estado
+    public State(Clientes clients, Centrales powerPlants) {
+        State.powerPlants = powerPlants;
+        State.clients = clients;
         this.assignment = new int[clients.size()];
     }
 
@@ -34,7 +36,7 @@ public class Estado {
                 //assign the next available power plant to clients with guaranteed contracts
                 while(!changeAssignment(clientID, powerPlantID)){
                     powerPlantID++;
-                    if(powerPlantID >= Estado.powerPlants.size()){
+                    if(powerPlantID >= State.powerPlants.size()){
                         break;
                     }
                 }//don't assign a power plant to clients with non-guaranteed contracts at all
@@ -59,7 +61,7 @@ public class Estado {
                 //assign the next available power plant to clients with guaranteed contracts
                 while(!changeAssignment(clientID, powerPlantIdG)){
                     powerPlantIdG++;
-                    if(powerPlantIdG >= Estado.powerPlants.size()){
+                    if(powerPlantIdG >= State.powerPlants.size()){
                         break;
                     }
                 }
@@ -90,6 +92,8 @@ public class Estado {
         if(powerPlantID == -1 && clients.get(clientID).getContrato() == Cliente.NOGARANTIZADO){
             assignment[clientID] = -1;
             return true;
+        }else if(powerPlantID == -1 &&  clients.get(clientID).getContrato() == Cliente.GARANTIZADO){
+            return false;
         }
         Central powerPlant = powerPlants.get(powerPlantID);
         double currentProduction = this.getCurrentProduction(powerPlantID);
@@ -116,6 +120,14 @@ public class Estado {
      */
     public void setAssignment(int[] assignment) {
         this.assignment = assignment;
+    }
+
+    public Centrales getPowerPlants(){
+        return powerPlants;
+    }
+
+    public Clientes getClients(){
+        return clients;
     }
 
     /**
@@ -145,5 +157,10 @@ public class Estado {
             }
         }
         return production;
+    }
+
+    @Override
+    public String toString() {
+        return Arrays.toString(this.assignment);
     }
 }
