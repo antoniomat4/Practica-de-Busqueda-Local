@@ -16,7 +16,7 @@ public class BreadthFirstSearch implements Search {
 		this.search = search;
 	}
 
-	public List search(Problem p) {
+	public List search(Problem p) throws Exception {
 		return search.search(p, new FIFONodeStore());
 	}
 

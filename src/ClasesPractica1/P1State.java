@@ -11,15 +11,14 @@ import static java.lang.Math.sqrt;
  * Class for the state. A state is represented by a list the length of the number of customers.
  * At every customer's index, the index of the power plant which is responsible for them is saved.
  */
-public class State {
+public class P1State {
     private int[] assignment;
     private static Centrales powerPlants;
     private static Clientes clients;
 
-    //TODO besseres wort für estado
-    public State(Clientes clients, Centrales powerPlants) {
-        State.powerPlants = powerPlants;
-        State.clients = clients;
+    public P1State(Clientes clients, Centrales powerPlants) {
+        P1State.powerPlants = powerPlants;
+        P1State.clients = clients;
         this.assignment = new int[clients.size()];
     }
 
@@ -36,7 +35,7 @@ public class State {
                 //assign the next available power plant to clients with guaranteed contracts
                 while(!changeAssignment(clientID, powerPlantID)){
                     powerPlantID++;
-                    if(powerPlantID >= State.powerPlants.size()){
+                    if(powerPlantID >= P1State.powerPlants.size()){
                         break;
                     }
                 }//don't assign a power plant to clients with non-guaranteed contracts at all
@@ -61,7 +60,7 @@ public class State {
                 //assign the next available power plant to clients with guaranteed contracts
                 while(!changeAssignment(clientID, powerPlantIdG)){
                     powerPlantIdG++;
-                    if(powerPlantIdG >= State.powerPlants.size()){
+                    if(powerPlantIdG >= P1State.powerPlants.size()){
                         break;
                     }
                 }

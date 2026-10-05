@@ -38,7 +38,7 @@ public class HillClimbingSearch extends NodeExpander implements Search {
             return(goalState);
         }
         
-	private Node getHighestValuedNodeFrom(List children, Problem p) {
+	private Node getHighestValuedNodeFrom(List children, Problem p) throws Exception {
 		double highestValue = Double.NEGATIVE_INFINITY;
 		Node nodeWithHighestValue = null;
 		for (int i = 0; i < children.size(); i++) {
@@ -52,12 +52,12 @@ public class HillClimbingSearch extends NodeExpander implements Search {
 		return nodeWithHighestValue;
 	}
 
-	private double getHeuristic(Node aNode, Problem p) {
+	private double getHeuristic(Node aNode, Problem p) throws Exception {
 
 		return p.getHeuristicFunction().getHeuristicValue(aNode.getState());
 	}
 
-	private double getValue(Node n, Problem p) {
+	private double getValue(Node n, Problem p) throws Exception {
 
 		return -1 * getHeuristic(n, p); //assumption greater heuristic value =>
 		// HIGHER on hill; 0 == goal state;

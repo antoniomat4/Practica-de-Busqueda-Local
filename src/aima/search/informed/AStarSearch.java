@@ -38,12 +38,22 @@ public class AStarSearch extends PrioritySearch {
 			Node one = (Node) aNode;
 			Node two = (Node) anotherNode;
 
-			double h1 = problem.getHeuristicFunction().getHeuristicValue(
-					one.getState());
-			double g1 = one.getPathCost();
-			double h2 = problem.getHeuristicFunction().getHeuristicValue(
-					two.getState());
-			double g2 = two.getPathCost();
+            double h1 = 0;
+            try {
+                h1 = problem.getHeuristicFunction().getHeuristicValue(
+                        one.getState());
+            } catch (Exception e) {
+                throw new RuntimeException(e);
+            }
+            double g1 = one.getPathCost();
+            double h2 = 0;
+            try {
+                h2 = problem.getHeuristicFunction().getHeuristicValue(
+                        two.getState());
+            } catch (Exception e) {
+                throw new RuntimeException(e);
+            }
+            double g2 = two.getPathCost();
 
 			double s1 = g1 + h1;
 			double s2 = g2 + h2;

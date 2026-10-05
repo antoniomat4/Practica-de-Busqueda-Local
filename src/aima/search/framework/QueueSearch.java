@@ -16,7 +16,7 @@ public abstract class QueueSearch extends NodeExpander {
 
 	private static String MAX_QUEUE_SIZE = "maxQueueSize";
 
-	public List search(Problem problem, NodeStore fringe) {
+	public List search(Problem problem, NodeStore fringe) throws Exception {
 		clearInstrumentation();
 		fringe.add(new Node(problem.getInitialState()));
 		setQueueSize(fringe.size());
@@ -56,5 +56,5 @@ public abstract class QueueSearch extends NodeExpander {
 	}
 
 	protected abstract void addExpandedNodesToFringe(NodeStore fringe,
-			Node node, Problem p);
+			Node node, Problem p) throws Exception;
 }

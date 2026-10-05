@@ -6,7 +6,7 @@ package aima.search.framework;
  */
 public interface HeuristicFunction {
 
-	double getHeuristicValue(Object state);
+	double getHeuristicValue(Object state) throws Exception;
 
 
 }

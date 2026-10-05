@@ -111,11 +111,11 @@ public class SimulatedAnnealingSearch extends NodeExpander implements Search {
         return (goalState);
     }
 
-    private double getHeuristic(Node aNode, Problem p) {
+    private double getHeuristic(Node aNode, Problem p) throws Exception {
         return p.getHeuristicFunction().getHeuristicValue(aNode.getState());
     }
 
-    private double getValue(Node n, Problem p) {
+    private double getValue(Node n, Problem p) throws Exception {
         return -1 * getHeuristic(n, p); //assumption greater heuristic value =>
         // HIGHER on hill; 0 == goal state;
         //SA deals with gardient DESCENT

@@ -41,11 +41,21 @@ public class GreedyBestFirstSearch extends PrioritySearch {
 			Node one = (Node) aNode;
 			Node two = (Node) anotherNode;
 
-			double h1 = problem.getHeuristicFunction().getHeuristicValue(
-					one.getState());
-			double h2 = problem.getHeuristicFunction().getHeuristicValue(
-					two.getState());
-			if (h1 == h2) {
+            double h1 = 0;
+            try {
+                h1 = problem.getHeuristicFunction().getHeuristicValue(
+                        one.getState());
+            } catch (Exception e) {
+                throw new RuntimeException(e);
+            }
+            double h2 = 0;
+            try {
+                h2 = problem.getHeuristicFunction().getHeuristicValue(
+                        two.getState());
+            } catch (Exception e) {
+                throw new RuntimeException(e);
+            }
+            if (h1 == h2) {
 				return 0;
 			} else if (h1 < h2) {
 				return -1;

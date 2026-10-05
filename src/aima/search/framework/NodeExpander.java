@@ -16,7 +16,7 @@ public class NodeExpander {
 		metrics.set(NODES_EXPANDED, 0);
 	}
 
-	public List expandNode(Node node, Problem problem) {
+	public List expandNode(Node node, Problem problem) throws Exception {
 		double heuristic = problem.getHeuristicFunction().getHeuristicValue(
 				node.getState());
 		//System.out.println("Expanding\n"+node.getState()+"\n"+"heuristic =

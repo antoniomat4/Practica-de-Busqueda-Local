@@ -11,7 +11,7 @@ public class GraphSearch extends QueueSearch {
 
 
 	protected void addExpandedNodesToFringe(NodeStore fringe, Node node,
-			Problem problem) {
+			Problem problem) throws Exception {
 
 		if (!(alreadySeen(node))) {
 			closed.add(node.getState());

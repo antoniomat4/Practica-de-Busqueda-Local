@@ -18,7 +18,7 @@ public class DepthFirstSearch implements Search {
 
 	}
 
-	public List search(Problem p) {
+	public List search(Problem p) throws Exception {
 
 		return search.search(p, new LIFONodeStore());
 	}
