@@ -9,6 +9,12 @@ import java.util.ArrayList;
 
 public class P1HeuristicFunction implements HeuristicFunction {
 
+    /**
+     * Calculates the total cost of an assignment of power plants to clients
+     * @param state current state whose cost is to be calculated
+     * @return total cost of the states assignment
+     * @throws Exception
+     */
     @Override
     public double getHeuristicValue(Object state) throws Exception {
         P1State currentState = (P1State) state;
@@ -22,8 +28,8 @@ public class P1HeuristicFunction implements HeuristicFunction {
             Cliente client = clients.get(clientID);
             int powerPlantID = assignment[clientID];
 
+            //add penalty for not supplying a customer
             if(powerPlantID == -1){
-            //add penalty for not supplying a customer to the cost
                 cost += VEnergia.getTarifaClientePenalizacion(client.getTipo());
             }else{
                 Central powerPlant = powerPlants.get(powerPlantID);
@@ -38,7 +44,8 @@ public class P1HeuristicFunction implements HeuristicFunction {
 
                 //add production cost
                 if(seenPowerPlants[powerPlantID] == 0){
-                    cost += powerPlant.getProduccion() * VEnergia.getCosteProduccionMW(powerPlant.getTipo()) + VEnergia.getCosteMarcha(powerPlant.getTipo());
+                    cost += powerPlant.getProduccion() * VEnergia.getCosteProduccionMW(powerPlant.getTipo())
+                            + VEnergia.getCosteMarcha(powerPlant.getTipo());
                     seenPowerPlants[powerPlantID] = 1;
                 }
             }

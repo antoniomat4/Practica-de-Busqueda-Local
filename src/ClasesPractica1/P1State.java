@@ -47,37 +47,37 @@ public class P1State {
     }
 
     /**
-     * Generates an initial state by assigning clients with guaranteed contracts to the next
-     * available power plant and topping those off with clients with non-guaranteed contracts.
-     * @return a valid assignment of clients to power plants
+     * Generates an initial state by first assigning clients with guaranteed contracts to the next
+     * available power plant and then topping them off with clients with non-guaranteed contracts.
      */
-    public int[] generateInitialAssignment2(){
-        int powerPlantIdG = 0;
-        int powerPlantIdN = 0;
+    public void generateInitialAssignment2(){
+        int powerPlantID = 0;
         for (int clientID = 0; clientID < clients.size(); clientID++) {
             Cliente client = clients.get(clientID);
             if(client.getContrato() == Cliente.GARANTIZADO){
                 //assign the next available power plant to clients with guaranteed contracts
-                while(!changeAssignment(clientID, powerPlantIdG)){
-                    powerPlantIdG++;
-                    if(powerPlantIdG >= P1State.powerPlants.size()){
+                while(!changeAssignment(clientID, powerPlantID)){
+                    if(powerPlantID + 1 >= P1State.powerPlants.size()){
+                        System.out.println("Not enough power plants for all clients with guaranteed contracts.");
                         break;
                     }
-                }
-            }else if(client.getContrato() == Cliente.NOGARANTIZADO){
-                //top off already visited power plants with clients with non-guaranteed contracts
-                while(!changeAssignment(clientID, powerPlantIdN)){
-                    powerPlantIdN++;
-                    if(powerPlantIdN >= powerPlantIdG){
-                        //in order to not take away space from clients with guaranteed contracts,
-                        //don't assign if a new power plant would be needed
-                        changeAssignment(clientID, -1);
-                        break;
-                    }
+                    powerPlantID++;
                 }
             }
         }
-        return this.assignment;
+        for (int clientID = 0; clientID < clients.size(); clientID++) {
+            Cliente client = clients.get(clientID);
+            if(client.getContrato() == Cliente.NOGARANTIZADO){
+                //assign the next available power plant to clients with guaranteed contracts
+                while(!changeAssignment(clientID, powerPlantID)){
+                    if(powerPlantID >= P1State.powerPlants.size()-1){
+                        changeAssignment(clientID, -1);
+                        break;
+                    }
+                    powerPlantID++;
+                }
+            }
+        }
     }
 
     /**
@@ -91,7 +91,8 @@ public class P1State {
         if(powerPlantID == -1 && clients.get(clientID).getContrato() == Cliente.NOGARANTIZADO){
             assignment[clientID] = -1;
             return true;
-        }else if(powerPlantID == -1 &&  clients.get(clientID).getContrato() == Cliente.GARANTIZADO){
+        }else if((powerPlantID == -1 &&  clients.get(clientID).getContrato() == Cliente.GARANTIZADO)
+                || powerPlantID == assignment[clientID]){
             return false;
         }
         Central powerPlant = powerPlants.get(powerPlantID);
