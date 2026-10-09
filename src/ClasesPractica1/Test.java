@@ -17,8 +17,8 @@ public class Test {
         Clientes clients = new Clientes(1000, new double[]{0.25, 0.3, 0.45}, 0.75, 144);
         Centrales powerPlants = new Centrales(new int[]{5, 10, 25}, 144);
         P1State initialState = new P1State(clients, powerPlants);
-        initialState.generateInitialAssignment1();
-        P1HillClimbingSearch(initialState);
+        initialState.generateInitialAssignment2();
+//        P1HillClimbingSearch(initialState);
         P1SimulatedAnnealingSearch(initialState);
     }
     private static void P1HillClimbingSearch(P1State state)  {
