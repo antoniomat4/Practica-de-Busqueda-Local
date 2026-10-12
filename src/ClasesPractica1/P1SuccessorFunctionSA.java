@@ -20,6 +20,7 @@ public class P1SuccessorFunctionSA implements SuccessorFunction {
         P1State currentState = (P1State) state;
         P1HeuristicFunction h = new P1HeuristicFunction();
         Random r = new  Random();
+        int max_iter = 1000;
 
 
         P1State successorState = new P1State(currentState.getClients(), currentState.getPowerPlants());
@@ -31,8 +32,11 @@ public class P1SuccessorFunctionSA implements SuccessorFunction {
             int currentPowerPlantID = currentState.getAssignment()[clientID];
             int  newPowerPlantID = r.nextInt(currentState.getPowerPlants().size() +1) - 1;
             //make sure the successor does not have the same assignment
+            int i = 0;
             while(!successorState.changeAssignment(clientID, newPowerPlantID)){
+                if(i > max_iter) return successors;
                 newPowerPlantID = r.nextInt(currentState.getPowerPlants().size() +1) - 1;
+                i++;
             }
             double cost = h.getHeuristicValue(successorState);
             String action = "Change Assignment Client " + clientID + ": power plant " +
@@ -43,9 +47,12 @@ public class P1SuccessorFunctionSA implements SuccessorFunction {
             int clientID2 = r.nextInt(currentState.getClients().size());
             int powerPlantID1 = currentState.getAssignment()[clientID1];
             int powerPlantID2 = currentState.getAssignment()[clientID2];
+            int i=0;
             while(!currentState.swapAssignment(clientID1, clientID2)){
+                if(i > max_iter) return successors;
                 clientID1 = r.nextInt(currentState.getClients().size());
                 powerPlantID1 = currentState.getAssignment()[clientID1];
+                i++;
             }
             double cost =  h.getHeuristicValue(currentState);
             String action = "Swap Assignment Client " + clientID1 + ": " + powerPlantID1 + " ---> " + powerPlantID2

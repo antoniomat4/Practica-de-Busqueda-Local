@@ -19,17 +19,19 @@ public class HillClimbingSearch extends NodeExpander implements Search {
 		clearInstrumentation();
 		Node current = new Node(p.getInitialState());
 		Node neighbor = null;
+		int i = 0;
 		while (true) {
 			List children = expandNode(current, p);
 			neighbor = getHighestValuedNodeFrom(children, p);
 
-			if ((neighbor == null)
+			if ((neighbor == null || i > 1000)
 					|| (getValue(neighbor, p) <= getValue(current, p))) {
                                 goalState=current.getState();
                                 lastNode=current;
 				return SearchUtils.actionsFromNodes(current.getPathFromRoot());
 			}
 			current = neighbor;
+			i++;
 		}
 
 	}
