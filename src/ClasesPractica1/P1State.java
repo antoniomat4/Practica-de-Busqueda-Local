@@ -2,7 +2,9 @@ package ClasesPractica1;
 
 import IA.Energia.*;
 
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Comparator;
 
 import static IA.Energia.Cliente.GARANTIZADO;
 import static IA.Energia.Cliente.NOGARANTIZADO;
@@ -28,69 +30,48 @@ public class P1State {
     }
 
     /**
-     * Generates an initial state by first assigning clients with guaranteed contracts to the next
-     * available power plant and then topping them off with clients with non-guaranteed contracts.
+     * Generates an initial assignment by assigning customers with larger demand first.
      */
-    public void generateInitialAssignment1(){
-        int powerPlantID = 0;
-        for (int clientID = 0; clientID < clients.size(); clientID++) {
-            Cliente client = clients.get(clientID);
-            if(client.getContrato() == GARANTIZADO){
-                //assign the next available power plant to clients with guaranteed contracts
-                while(!changeAssignment(clientID, powerPlantID)){
-                    if(powerPlantID + 1 >= P1State.powerPlants.size()){
-                        System.out.println("Not enough power plants for all clients with guaranteed contracts.");
-                        break;
-                    }
-                    powerPlantID++;
-                }
-            }
-        }
-        for (int clientID = 0; clientID < clients.size(); clientID++) {
-            Cliente client = clients.get(clientID);
-            if(client.getContrato() == Cliente.NOGARANTIZADO){
-                //assign the next available power plant to clients with guaranteed contracts
-                while(!changeAssignment(clientID, powerPlantID)){
-                    if(powerPlantID >= P1State.powerPlants.size()-1){
-                        changeAssignment(clientID, -1);
-                        break;
-                    }
-                    powerPlantID++;
-                }
-            }
-        }
+    public void generateInitialAssignmentLargeFirst(){
+        ArrayList<Integer> guaranteedClients = getClientsWithType(GARANTIZADO);
+        ArrayList<Integer> notGuaranteedClients = getClientsWithType(NOGARANTIZADO);
+
+        //sort the clients by demand in descending order
+        Comparator<Integer> demandComparator = (id1, id2) -> {
+            double demand1 = clients.get(id1).getConsumo();
+            double demand2 = clients.get(id2).getConsumo();
+            return Double.compare(demand1, demand2);
+        };
+
+        guaranteedClients.sort(demandComparator);
+        notGuaranteedClients.sort(demandComparator);
+
+        assignClientsGreedy(guaranteedClients, GARANTIZADO);
+        assignClientsGreedy(notGuaranteedClients, NOGARANTIZADO);
     }
+
 
     /**
      * Calls assignClients to generate an initial assignment of clients to power plants by picking the next available
      * one closest to the client
      */
-    public void generateInitialAssignment2(){
-        assignClients(GARANTIZADO);
-        assignClients(NOGARANTIZADO);
+    public void generateInitialAssignmentGreedy(){
+        ArrayList<Integer> guaranteedClients = getClientsWithType(GARANTIZADO);
+        ArrayList<Integer> notGuaranteedClients = getClientsWithType(NOGARANTIZADO);
+
+        assignClientsGreedy(guaranteedClients, GARANTIZADO);
+        assignClientsGreedy(notGuaranteedClients, NOGARANTIZADO);
     }
 
     /**
      * Assigns clients to the next available power plant closest to them
      * @param clientType Type of clients to be assigned
      */
-    private void assignClients(int clientType){
-        for(int clientID = 0; clientID < clients.size(); clientID++){
+    private void assignClientsGreedy(ArrayList<Integer> clientIDs, int clientType){
+        for(int clientID : clientIDs){
             Cliente client = clients.get(clientID);
-            if(client.getContrato() != clientType) continue;
+            int bestPowerPlantID = getClosestFreePowerPlant(clientID);
 
-            int bestPowerPlantID = -1;
-            double bestDistance =  Double.MAX_VALUE;
-            for(int powerPlantID =0;  powerPlantID < powerPlants.size(); powerPlantID++){
-                Central powerPlant = powerPlants.get(powerPlantID);
-                if(getNecessaryMW(clientID, powerPlant) + currentProduction[powerPlantID] <= powerPlant.getProduccion()){
-                    double distance = getDistance(client, powerPlant);
-                    if(distance < bestDistance){
-                        bestPowerPlantID = powerPlantID;
-                        bestDistance = distance;
-                    }
-                }
-            }
             if(bestPowerPlantID != -1){
                 changeAssignment(clientID, bestPowerPlantID);
             }else if(clientType == GARANTIZADO){
@@ -148,9 +129,9 @@ public class P1State {
 
         //don't swap if both clients are already assigned to the same power plant
         //or a client with a guaranteed contract would not be assigned
-        if(powerPlantID1 == powerPlantID2) return false;
-        if(powerPlantID1 == -1 && clients.get(clientID2).getContrato() == GARANTIZADO) return false;
-        if(powerPlantID2 == -1 && clients.get(clientID1).getContrato() == GARANTIZADO) return false;
+        if(powerPlantID1 == powerPlantID2
+                || powerPlantID1 == -1 && clients.get(clientID2).getContrato() == GARANTIZADO
+                || powerPlantID2 == -1 && clients.get(clientID1).getContrato() == GARANTIZADO) return false;
 
         boolean swap1ok = isSwapPossible(powerPlantID1, clientID1, clientID2);
         boolean swap2ok = isSwapPossible(powerPlantID2, clientID2, clientID1);
@@ -158,14 +139,43 @@ public class P1State {
         if(swap1ok && swap2ok){
             this.assignment[clientID1] = powerPlantID2;
             this.assignment[clientID2] = powerPlantID1;
-            if(powerPlantID1 != -1){
-            this.currentProduction[powerPlantID1] +=  getNecessaryMW(clientID2, powerPlants.get(powerPlantID1))
-                    - getNecessaryMW(clientID1, powerPlants.get(powerPlantID1));
-            }
-            if(powerPlantID2 != -1){
-            this.currentProduction[powerPlantID2] += getNecessaryMW(clientID1, powerPlants.get(powerPlantID2))
-                    - getNecessaryMW(clientID2, powerPlants.get(powerPlantID2));
-            }
+            updateProductionAfterSwap(powerPlantID1, clientID1, clientID2);
+            updateProductionAfterSwap(powerPlantID2, clientID2, clientID1);
+            return true;
+        }
+        return false;
+    }
+
+    /**
+     * Swaps the assignment of three clients in a circle: 1->2, 2->3, 3->1
+     * @param clientID1 ID of the first client involved in the swap
+     * @param clientID2 ID of the second client involved in the swap
+     * @param clientID3 ID of the third client involved in the swap
+     * @return a boolean indicating whether the swap was successful
+     */
+    public boolean ringSwap(int clientID1, int clientID2, int clientID3){
+        int powerPlantID1 = this.assignment[clientID1];
+        int powerPlantID2 = this.assignment[clientID2];
+        int powerPlantID3 = this.assignment[clientID3];
+
+        //don't swap if two clients are assigned to the same power plant
+        // or a client with a guaranteed contract would not be assigned
+        if(powerPlantID1 == powerPlantID2 || powerPlantID1 == powerPlantID3 || powerPlantID2 == powerPlantID3
+                || powerPlantID1 == -1 && clients.get(clientID3).getContrato() == GARANTIZADO
+                || powerPlantID2 == -1 && clients.get(clientID1).getContrato() == GARANTIZADO
+                || powerPlantID3 == -1 && clients.get(clientID2).getContrato() == GARANTIZADO) return false;
+
+        boolean swap1ok = isSwapPossible(powerPlantID1, clientID1, clientID3);
+        boolean swap2ok = isSwapPossible(powerPlantID2, clientID2, clientID1);
+        boolean swap3ok = isSwapPossible(powerPlantID3, clientID3, clientID2);
+
+        if(swap1ok && swap2ok && swap3ok){
+            this.assignment[clientID1] = powerPlantID2;
+            this.assignment[clientID2] = powerPlantID3;
+            this.assignment[clientID3] = powerPlantID1;
+            updateProductionAfterSwap(powerPlantID1, clientID1, clientID3);
+            updateProductionAfterSwap(powerPlantID2, clientID2, clientID3);
+            updateProductionAfterSwap(powerPlantID3, clientID3, clientID1);
             return true;
         }
         return false;
@@ -231,6 +241,19 @@ public class P1State {
         return this.currentProduction;
     }
 
+    /**
+     * Updates the production array after a swap.
+     * @param powerPlantID ID of the power plant whose production is to be updated.
+     * @param oldClientID ID of the old client who leaves the power plant.
+     * @param newClientID ID of the new client who is assigned to the power plant.
+     */
+    private void updateProductionAfterSwap(int powerPlantID, int oldClientID, int newClientID){
+        if(powerPlantID != -1){
+            this.currentProduction[powerPlantID] += getNecessaryMW(newClientID, powerPlants.get(powerPlantID))
+                    - getNecessaryMW(oldClientID, powerPlants.get(powerPlantID));
+        }
+    }
+
     public void setCurrentProduction(double[] currentProduction){
         this.currentProduction = currentProduction;
     }
@@ -238,6 +261,41 @@ public class P1State {
     private static double getDistance(Cliente client, Central powerPlant){
         return sqrt((client.getCoordX() - powerPlant.getCoordX()) * (client.getCoordX() - powerPlant.getCoordX())
                 + (client.getCoordY() - powerPlant.getCoordY()) * (client.getCoordY() - powerPlant.getCoordY()));
+    }
+
+    /**
+     * Returns a list of IDs whose corresponding clients have a given contract type
+     * @param contractType contract type which the returned clients should have (GARANTIZADO or NOGARANTIZADO)
+     * @return a list of client IDs of a specific contract type
+     */
+    private ArrayList<Integer> getClientsWithType(int contractType){
+        ArrayList<Integer> clientsWithType = new ArrayList<>();
+        for(int clientID = 0; clientID < clients.size(); clientID++){
+            if(clients.get(clientID).getContrato() == contractType) clientsWithType.add(clientID);
+        }
+        return clientsWithType;
+    }
+
+    /**
+     * Returns the ID of the power plant which is closest to a client and can supply them
+     * @param clientID ID of the client whose closest free power plant is to be returned.
+     * @return ID of the power plant which is closest to the given client and can supply them.
+     */
+    private int getClosestFreePowerPlant(int clientID){
+        Cliente client =  clients.get(clientID);
+        int bestPowerPlantID = -1;
+        double bestDistance =  Double.MAX_VALUE;
+        for(int powerPlantID =0;  powerPlantID < powerPlants.size(); powerPlantID++){
+            Central powerPlant = powerPlants.get(powerPlantID);
+            if(getNecessaryMW(clientID, powerPlant) + currentProduction[powerPlantID] <= powerPlant.getProduccion()){
+                double distance = getDistance(client, powerPlant);
+                if(distance < bestDistance){
+                    bestPowerPlantID = powerPlantID;
+                    bestDistance = distance;
+                }
+            }
+        }
+        return bestPowerPlantID;
     }
 
     @Override

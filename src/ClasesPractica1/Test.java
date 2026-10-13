@@ -14,16 +14,18 @@ import java.util.Properties;
 
 public class Test {
     public static void main(String[] arg) throws Exception {
-        Clientes clients = new Clientes(1000, new double[]{0.25, 0.3, 0.45}, 0.75, 144);
-        Centrales powerPlants = new Centrales(new int[]{5, 10, 25}, 144);
+        int seed = 964;
+        System.out.println("Max Heap: " + (Runtime.getRuntime().maxMemory() / (1024 * 1024)) + " MB");
+        Clientes clients = new Clientes(1000, new double[]{0.25, 0.3, 0.45}, 0.75, seed);
+        Centrales powerPlants = new Centrales(new int[]{5, 10, 25}, seed);
         P1State initialState = new P1State(clients, powerPlants);
-        initialState.generateInitialAssignment2();
+        initialState.generateInitialAssignmentGreedy();
         P1HillClimbingSearch(initialState);
-        P1SimulatedAnnealingSearch(initialState);
+//        P1SimulatedAnnealingSearch(initialState);
     }
     private static void P1HillClimbingSearch(P1State state)  {
         try {
-            System.out.println("\nP1 Hill-Climbing:\n");
+            System.out.println("\nHill-Climbing:\n");
             Problem problem = new Problem(state, new P1SuccessorFunctionHC(), new P1GoalTest(), new P1HeuristicFunction());
             Search search = new HillClimbingSearch();
             SearchAgent agent = new SearchAgent(problem, search);
