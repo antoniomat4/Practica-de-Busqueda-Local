@@ -30,7 +30,7 @@ public class P1HeuristicFunction implements HeuristicFunction {
 
             //add penalty for not supplying a customer
             if(powerPlantID == -1){
-                cost += VEnergia.getTarifaClientePenalizacion(client.getTipo());
+                cost += VEnergia.getTarifaClientePenalizacion(client.getTipo()) * client.getConsumo();
             }else{
                 Central powerPlant = powerPlants.get(powerPlantID);
                 //subtract client's payment

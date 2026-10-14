@@ -9,6 +9,7 @@ import java.util.Comparator;
 import static IA.Energia.Cliente.GARANTIZADO;
 import static IA.Energia.Cliente.NOGARANTIZADO;
 import static java.lang.Math.sqrt;
+import static java.util.Collections.shuffle;
 
 
 /**
@@ -63,6 +64,44 @@ public class P1State {
         assignClientsGreedy(notGuaranteedClients, NOGARANTIZADO);
     }
 
+    public void generateInitialAssignmentRandom(){
+        ArrayList<Integer> guaranteedClients = getClientsWithType(GARANTIZADO);
+        int tries = 1;
+        while(true){
+            //reset assignment for every try
+            int[] assignmentReset = new int[clients.size()];
+            Arrays.fill(assignmentReset, -1);
+            setAssignment(assignmentReset);
+            boolean allAssigned = true;
+
+            for(int clientID : guaranteedClients){
+                //generate random order of power plants to try for every client
+                ArrayList<Integer> powerPlantIDs = new ArrayList<>();
+                for(int i = 0; i < powerPlants.size(); i++ ){
+                    powerPlantIDs.add(i);
+                }
+                shuffle(powerPlantIDs);
+                boolean clientAssigned = false;
+                for(int powerPlantID : powerPlantIDs){
+                    if(changeAssignment(clientID, powerPlantID)){
+                        clientAssigned = true;
+                        break;
+                    }
+                }
+                // start over if a client could not be assigned
+                if(!clientAssigned) {
+                    allAssigned = false;
+                    break;
+                }
+            }
+            if(allAssigned){
+                System.out.println("Tries to create initial assignment: " + tries);
+                return;
+            }
+            tries++;
+        }
+    }
+
     /**
      * Assigns clients to the next available power plant closest to them
      * @param clientType Type of clients to be assigned
@@ -92,11 +131,10 @@ public class P1State {
     public boolean changeAssignment(int clientID, int newPowerPlantID){
         int oldPowerPlantID = this.assignment[clientID];
 
-        if((newPowerPlantID == -1 &&  clients.get(clientID).getContrato() == GARANTIZADO)
-                || newPowerPlantID == assignment[clientID]){
-            return false;
-        //only allow no assignation if the clients contract is not guaranteed
-        } else if(newPowerPlantID == -1 && clients.get(clientID).getContrato() == Cliente.NOGARANTIZADO){
+        if(newPowerPlantID == oldPowerPlantID) return false;
+
+        if(newPowerPlantID == -1){
+            if(clients.get(clientID).getContrato() == GARANTIZADO) return false;
             this.currentProduction[oldPowerPlantID] -= getNecessaryMW(clientID, powerPlants.get(oldPowerPlantID));
             this.assignment[clientID] = -1;
             return true;
@@ -105,7 +143,7 @@ public class P1State {
         Central powerPlant = powerPlants.get(newPowerPlantID);
         double currentProduction = this.getCurrentProduction()[newPowerPlantID];
         double necessaryMW = getNecessaryMW(clientID, powerPlant);
-        //only change the assignment if the power plant produces enough
+        //check whether the new power plant has enough capacity to supply the client
         if(currentProduction + necessaryMW <= powerPlant.getProduccion()){
             if(oldPowerPlantID != -1){  //only update the production array if it concerns a real power plant
                 this.currentProduction[oldPowerPlantID] -= getNecessaryMW(clientID, powerPlants.get(oldPowerPlantID));
